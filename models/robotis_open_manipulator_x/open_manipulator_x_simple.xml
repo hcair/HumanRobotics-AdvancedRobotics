@@ -1,0 +1,109 @@
+<mujoco model="open_manipulator_x">
+  <compiler angle="radian" meshdir="assets/"/>
+
+  <option cone="elliptic" impratio="10"/>
+
+  <asset>
+    <material name="black" rgba="0.1 0.1 0.1 1"/>
+    <material name="robot_light" rgba="0.62 0.64 0.70 1"/>
+
+    <mesh name="link1" file="link1.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="link2" file="link2.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="link3" file="link3.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="link4" file="link4.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="link5" file="link5.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="gripper_left_palm" file="gripper_left_palm.stl" scale="0.001 0.001 0.001"/>
+    <mesh name="gripper_right_palm" file="gripper_right_palm.stl" scale="0.001 0.001 0.001"/>
+  </asset>
+
+  <default>
+    <default class="XM430">
+      <joint frictionloss="0.1" armature="0.1"/>
+      <default class="Joint1">
+        <joint axis="0 0 1" range="-3.14159 3.14159"/>
+      </default>
+      <default class="Joint2">
+        <joint axis="0 0 1" range="-1.5 1.5"/>
+      </default>
+      <default class="Joint3">
+        <joint axis="0 0 1" range="-1.5 1.4"/>
+      </default>
+      <default class="Joint4">
+        <joint axis="0 0 1" range="-1.7 1.97"/>
+      </default>
+    </default>
+    <default class="XL430">
+      <joint frictionloss="0.1" armature="0.1"/>
+    </default>
+    <default class="visual">
+      <geom type="mesh" contype="0" conaffinity="0" density="0" group="2" material="robot_light"/>
+    </default>
+    <default class="collision">
+      <geom group="3" type="mesh" material="black"/>
+    </default>
+  </default>
+
+  <worldbody>
+    <geom name="floor" type="plane" size="2 2 0.01" rgba="0.88 0.88 0.92 1"/>
+    <body name="link1">
+      <geom mesh="link1" class="visual"/>
+      <geom mesh="link1" class="collision"/>
+      <body name="link2" pos="0.012 0 0.017">
+        <inertial pos="0 0 0" quat="1 0 0 0" mass="0.10" diaginertia=" 0.00003 0.00003 0.00002"/>
+        <joint name="Joint1" class="Joint1"/>
+        <geom pos="0 0 0.019" mesh="link2" class="visual"/>
+        <geom pos="0 0 0.019" mesh="link2" class="collision"/>
+        <body name="link3" pos="0 0 0.0595" axisangle="1 0 0 1.5707963">
+          <inertial pos="0 0 0" quat="1 0 0 0" mass="0.14" diaginertia="0.0002 0.0001 0.0002"/>
+          <joint name="Joint2" class="Joint2"/>
+          <geom mesh="link3" axisangle="1 0 0 -1.5707963" class="visual"/>
+          <geom mesh="link3" axisangle="1 0 0 -1.5707963" class="collision"/>
+          <body name="link4" pos="0.024 0.128 0">
+            <inertial pos="0 0 0" quat="1 0 0 0" mass="0.13" diaginertia="0.0001 0.0002 0.0002"/>
+            <joint name="Joint3" class="Joint3"/>
+            <geom mesh="link4" axisangle="1 0 0 -1.5707963" class="visual"/>
+            <geom mesh="link4" axisangle="1 0 0 -1.5707963" class="collision"/>
+            <body name="link5" pos="0.124 0 0">
+              <inertial pos="0 0 0" quat="1 0 0 0" mass="0.24" diaginertia=" 0.0001 0.0003 0.0003"/>
+              <joint name="Joint4" class="Joint4"/>
+              <geom mesh="link5" axisangle="1 0 0 -1.5707963" class="visual"/>
+              <geom mesh="link5" axisangle="1 0 0 -1.5707963" class="collision"/>
+              <body name="end_effector" pos="0.126 0 0" axisangle="1 0 0 -1.5707963">
+                <inertial pos="0 0 0" quat="1 0 0 0" mass="1e-6" diaginertia="1e-9 1e-9 1e-9"/>
+                <site name="ee_site" size="0.01" rgba="1 0 0 1" group="1"/>
+              </body>
+              <body name="gripper_left" pos="0.0817 0 -0.021" axisangle="1 0 0 -1.5707963">
+                <inertial pos="0 0 0" quat="1 0 0 0" mass="1e-6" diaginertia="1e-9 1e-9 1e-9"/>
+                <geom mesh="gripper_left_palm" class="visual"/>
+                <geom mesh="gripper_left_palm" class="collision"/>
+              </body>
+              <body name="gripper_right" pos="0.0817 0 0.021" axisangle="1 0 0 -1.5707963">
+                <inertial pos="0 0 0" quat="1 0 0 0" mass="1e-6" diaginertia="1e-9 1e-9 1e-9"/>
+                <geom mesh="gripper_right_palm" class="visual"/>
+                <geom mesh="gripper_right_palm" class="collision"/>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <actuator>
+    <motor name="Joint1" joint="Joint1" gear="1" forcelimited="true" forcerange="-4.1 4.1"/>
+    <motor name="Joint2" joint="Joint2" gear="1" forcelimited="true" forcerange="-4.1 4.1"/>
+    <motor name="Joint3" joint="Joint3" gear="1" forcelimited="true" forcerange="-4.1 4.1"/>
+    <motor name="Joint4" joint="Joint4" gear="1" forcelimited="true" forcerange="-4.1 4.1"/>
+  </actuator>
+
+  <contact>
+    <exclude body1="link1" body2="link2"/>
+    <exclude body1="link5" body2="gripper_left"/>
+    <exclude body1="link5" body2="gripper_right"/>
+    <exclude body1="gripper_left" body2="gripper_right"/>
+  </contact>
+
+  <keyframe>
+    <key name="home" qpos="0 0 0 0" ctrl="0 0 0 0"/>
+  </keyframe>
+</mujoco>
