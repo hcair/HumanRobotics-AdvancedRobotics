@@ -2,13 +2,11 @@
 
 import logging
 import sys
-import time
 import tkinter as tk
 from pathlib import Path
 
-import numpy as np
 import mujoco
-import mujoco.viewer
+import numpy as np
 
 _p = Path(__file__).resolve().parent
 while _p != _p.parent and not (_p / "core").is_dir():
@@ -17,14 +15,14 @@ if str(_p) not in sys.path:
     sys.path.insert(0, str(_p))
 PROJECT_ROOT = _p
 
-from core import load_model, KeyboardHandler, robotics, UnifiedGUI, make_qpos_parameter_from_model
-from core.realtime import RealtimeSync, RateLimiter, RealtimeConfig
+from core import robotics, make_qpos_parameter_from_model
+from homeworks.helpers import HWAppBase
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # ==============================
-# Constants
+# Problem constants
 # ==============================
 DEG2RAD = np.pi / 180.0
 INITIAL_QPOS_DEG = np.array([-45.0, -40.0, 20.0, 20.0, 0.0, 0.0])  # degrees
@@ -41,7 +39,7 @@ def compute_gravity_vector(model: mujoco.MjModel, data: mujoco.MjData, robot: ro
         body_name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_BODY, body_id)
         if body_name is None:
             continue
-        _, Jp, _ = robot.get_body_jacobian(
+        _, Jv, _ = robot.get_body_jacobian(
             data, body_name, translational=True, rotational=False
         )
         m = model.body_mass[body_id]
@@ -53,30 +51,37 @@ def compute_gravity_vector(model: mujoco.MjModel, data: mujoco.MjData, robot: ro
 
 
 # ==============================
-# Application
+# Demo wiring
 # ==============================
-class OpenManipulatorApp:
+class OpenManipulatorApp(HWAppBase):
+    model_path = PROJECT_ROOT / "models" / "robotis_open_manipulator_x" / "open_manipulator_x_simple.xml"
+    title = "Open Manipulator X"
+    camera = {"lookat": [0.14, -0.04, 0.09], "distance": 1.25, "azimuth": 83.0, "elevation": -35.0}
+
     def __init__(self) -> None:
-        model_path = PROJECT_ROOT / "models" / "robotis_open_manipulator_x" / "open_manipulator_x_simple.xml"
-        if not model_path.exists():
-            raise FileNotFoundError(f"Model not found: {model_path}")
-
-        self.model, self.data = load_model(model_path)
-        self.robot = robotics.RobotWrapper(self.model, site_name="ee_site")
+        super().__init__()
         nq = self.model.nq
-        nv = self.model.nv
-
-        self.initial_qpos = (INITIAL_QPOS_DEG[:nq] * DEG2RAD).astype(float)
-        self.initial_qvel = np.zeros(nv)
-
-        self.render_dt = RealtimeConfig.render_dt()
-        self.sync = RealtimeSync()
-        self.render_tick = RateLimiter(0.0, self.render_dt)
-
+        self.q_home = (INITIAL_QPOS_DEG[:nq] * DEG2RAD).astype(float)
         self.gravity_compensation_enabled = True
-        self.keyboard = KeyboardHandler()
 
-    # ------------------------------------------------------------------
+    def sim_step(self) -> bool:
+        mujoco.mj_forward(self.model, self.data)
+        if self.gravity_compensation_enabled:
+            tau = np.array(
+                compute_gravity_vector(self.model, self.data, self.robot)[: self.model.nu],
+                dtype=float,
+            )
+        else:
+            tau = np.zeros(self.model.nu)
+        self.robot.set_torque(self.data, tau)
+        mujoco.mj_step(self.model, self.data)
+        return True
+
+    # ---- GUI button callbacks ----
+    def _toggle_gravity_compensation(self) -> None:
+        self.gravity_compensation_enabled = not self.gravity_compensation_enabled
+        logger.info("Gravity compensation: %s", "ON" if self.gravity_compensation_enabled else "OFF")
+
     def _print_dynamics(self, which: str) -> None:
         np.set_printoptions(precision=4, suppress=True, linewidth=120)
         mujoco.mj_forward(self.model, self.data)
@@ -85,15 +90,12 @@ class OpenManipulatorApp:
             logger.info("\n=== End-effector pose (FK) ===\nPosition p (3,): %s\nRotation matrix R (3x3):\n%s\n\n", pos, R)
         elif which == "jac":
             jac_bodies = [
-                ("link2", "J1"),
-                ("link3", "J2"),
-                ("link4", "J3"),
-                ("link5", "J4"),
-                ("end_effector", "Jee"),
+                ("link2", "J1"), ("link3", "J2"), ("link4", "J3"),
+                ("link5", "J4"), ("end_effector", "Jee"),
             ]
             logger.info("\n=== Jacobian per body ===\n")
             for body_name, label in jac_bodies:
-                J_full, jacp, jacr = self.robot.get_body_jacobian(
+                J_full, _, _ = self.robot.get_body_jacobian(
                     self.data, body_name, translational=True, rotational=True
                 )
                 logger.info("--- %s (%s) ---\nJ (6 x nv):\n%s\n", label, body_name, J_full)
@@ -109,22 +111,9 @@ class OpenManipulatorApp:
             g = self.robot.get_gravity_vector(self.data)
             logger.info("\n=== Gravity vector g(q) (nv,) ===\n%s\n\n", g)
 
-    def _reset_simulation(self) -> None:
-        mujoco.mj_resetData(self.model, self.data)
-        self.data.qpos[:] = self.initial_qpos
-        self.data.qvel[:] = self.initial_qvel
-        mujoco.mj_forward(self.model, self.data)
-        self.sync.reset(self.data.time)
-        self.render_tick.next_time = self.data.time
-        logger.info("Reset: back to initial pose.")
-
-    def _toggle_gravity_compensation(self) -> None:
-        self.gravity_compensation_enabled = not self.gravity_compensation_enabled
-        logger.info("Gravity compensation: %s", "ON" if self.gravity_compensation_enabled else "OFF")
-
-    def _build_content(self, parent, api) -> None:
+    def build_gui_content(self, parent: tk.Widget, api) -> None:
         status_param = make_qpos_parameter_from_model(
-            self.model, default=list(self.initial_qpos), name="Current q (Status)"
+            self.model, default=list(self.q_home), name="Current q (Status)",
         )
         status_param.read_only = True
         status_param.setter = None
@@ -134,7 +123,7 @@ class OpenManipulatorApp:
 
         cmd_params = [
             make_qpos_parameter_from_model(
-                self.model, default=list(self.initial_qpos), name="Target q (Command)"
+                self.model, default=list(self.q_home), name="Target q (Command)",
             )
         ]
         cmd_panel = api.add_parameter_panel(parent, cmd_params, self.model, self.data)
@@ -151,85 +140,12 @@ class OpenManipulatorApp:
         ])
         btns.pack(side=tk.TOP, fill=tk.X)
 
-    # ------------------------------------------------------------------
-    def run(self) -> None:
-        gui = UnifiedGUI(
-            self.model, self.data,
-            title="Open Manipulator X",
-            build_content=self._build_content,
-            auto_start=False,
-        )
-        gui.set_reset_callback(self._reset_simulation)
-        gui.start()
-
-        self._reset_simulation()
-
-        self.keyboard.set_reset_callback(self._reset_simulation)
-        logger.info("Keyboard: %s", self.keyboard.get_keyboard_help())
-
-        try:
-            self.keyboard.set_exit_callback(lambda: logger.info("Simulation exited."))
-
-            with mujoco.viewer.launch_passive(
-                self.model, self.data, key_callback=self.keyboard.create_key_callback()
-            ) as viewer:
-                self.keyboard.set_viewer(viewer)
-                viewer.cam.lookat[:] = [0.14, -0.04, 0.09]
-                viewer.cam.distance = 1.25
-                viewer.cam.azimuth = 83.0
-                viewer.cam.elevation = -35.0
-                try:
-                    if hasattr(viewer, "opt") and hasattr(viewer.opt, "background_rgb"):
-                        viewer.opt.background_rgb[:] = [0.45, 0.45, 0.5]
-                    if hasattr(viewer, "opt") and hasattr(viewer.opt, "ambient"):
-                        viewer.opt.ambient = 0.4
-                except Exception:
-                    pass
-
-                while viewer.is_running() and not self.keyboard.should_exit:
-                    gui.update()
-                    gui.check_and_apply_pending_update()
-                    gui.check_and_apply_pending_reset()
-
-                    if self.keyboard.paused:
-                        viewer.sync()
-                        time.sleep(0.01)
-                        continue
-
-                    self.sync.set_speed_factor(self.keyboard.speed_factor)
-                    target_t = self.sync.target_sim_time()
-
-                    while self.data.time < target_t:
-                        mujoco.mj_forward(self.model, self.data)
-                        if self.gravity_compensation_enabled:
-                            tau = np.array(
-                                compute_gravity_vector(self.model, self.data, self.robot)[: self.model.nu],
-                                dtype=float,
-                            )
-                        else:
-                            tau = np.zeros(self.model.nu)
-
-                        self.robot.set_torque(self.data, tau)
-                        mujoco.mj_step(self.model, self.data)
-
-                    if self.render_tick.ready(self.data.time):
-                        viewer.sync()
-
-                    time.sleep(0.0005)
-
-        finally:
-            try:
-                gui.stop()
-            except Exception:
-                pass
-
 
 # ==============================
 # main
 # ==============================
 def main() -> None:
-    app = OpenManipulatorApp()
-    app.run()
+    OpenManipulatorApp().run()
 
 
 if __name__ == "__main__":

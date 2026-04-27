@@ -80,17 +80,17 @@ class RobotWrapper:
         translational: bool = True,
         rotational: bool = True,
     ) -> tuple[np.ndarray, np.ndarray | None, np.ndarray | None]:
-        """Jacobian for the configured end-effector (site or body). Linear vel v = Jp @ qd, angular vel omega = Jr @ qd.
+        """Jacobian for the configured end-effector (site or body). Linear vel v = Jv @ qd, angular vel omega = Jw @ qd.
 
         Args:
             data: Simulation state.
-            translational: Include translational part Jp.
-            rotational: Include rotational part Jr.
+            translational: Include translational part Jv.
+            rotational: Include rotational part Jw.
 
         Returns:
-            (J, Jp, Jr): J = stacked [Jp; Jr] when both requested (6 x nv), else 3 x nv.
-            Jp is None when rotational-only; Jr is None when translational-only.
-            Callers can use J, or Jp, or Jr as needed.
+            (J, Jv, Jw): J = stacked [Jv; Jw] when both requested (6 x nv), else 3 x nv.
+            Jv is None when rotational-only; Jw is None when translational-only.
+            Callers can use J, or Jv, or Jw as needed.
 
         Raises:
             ValueError: If neither site_name nor body_name was set at construction.
@@ -101,7 +101,7 @@ class RobotWrapper:
             raw = self._jacobian(data, False, self.ee_body_id, translational, rotational)
         else:
             raise ValueError("EE not configured. Pass site_name or body_name to RobotWrapper.")
-        return _jacobian_to_J_Jp_Jr(raw, translational, rotational)
+        return _jacobian_to_J_Jv_Jw(raw, translational, rotational)
 
     def get_site_jacobian(
         self,
@@ -110,7 +110,7 @@ class RobotWrapper:
         translational: bool = True,
         rotational: bool = True,
     ) -> tuple[np.ndarray, np.ndarray | None, np.ndarray | None]:
-        """Jacobian for a site by name. Returns (J, Jp, Jr) as in get_ee_jacobian."""
+        """Jacobian for a site by name. Returns (J, Jv, Jw) as in get_ee_jacobian."""
         site_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_SITE, site_name)
         if site_id < 0:
             logger.warning("site_name '%s' not found in model", site_name)
@@ -118,7 +118,7 @@ class RobotWrapper:
         raw = _jacobian_impl(
             self.model, data, True, site_id, translational, rotational
         )
-        return _jacobian_to_J_Jp_Jr(raw, translational, rotational)
+        return _jacobian_to_J_Jv_Jw(raw, translational, rotational)
 
     def get_body_jacobian(
         self,
@@ -127,7 +127,7 @@ class RobotWrapper:
         translational: bool = True,
         rotational: bool = True,
     ) -> tuple[np.ndarray, np.ndarray | None, np.ndarray | None]:
-        """Jacobian for a body COM by name. Returns (J, Jp, Jr) as in get_ee_jacobian."""
+        """Jacobian for a body COM by name. Returns (J, Jv, Jw) as in get_ee_jacobian."""
         body_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, body_name)
         if body_id < 0:
             logger.warning("body_name '%s' not found in model", body_name)
@@ -135,7 +135,7 @@ class RobotWrapper:
         raw = _jacobian_impl(
             self.model, data, False, body_id, translational, rotational
         )
-        return _jacobian_to_J_Jp_Jr(raw, translational, rotational)
+        return _jacobian_to_J_Jv_Jw(raw, translational, rotational)
 
     def get_ee_pose(self, data: mujoco.MjData) -> tuple[np.ndarray, np.ndarray]:
         """Position and orientation of the configured end-effector.
@@ -262,15 +262,15 @@ class RobotWrapper:
             data.ctrl[n:] = 0.0
 
 
-def _jacobian_to_J_Jp_Jr(
+def _jacobian_to_J_Jv_Jw(
     raw: np.ndarray | tuple[np.ndarray, np.ndarray],
     translational: bool,
     rotational: bool,
 ) -> tuple[np.ndarray, np.ndarray | None, np.ndarray | None]:
-    """Convert _jacobian_impl return value to (J, Jp, Jr). J = [Jp; Jr] when both, else the single part."""
+    """Convert _jacobian_impl return value to (J, Jv, Jw). J = [Jv; Jw] when both, else the single part."""
     if isinstance(raw, tuple):
-        Jp, Jr = raw
-        return (np.vstack([Jp, Jr]), Jp, Jr)
+        Jv, Jw = raw
+        return (np.vstack([Jv, Jw]), Jv, Jw)
     if translational:
         return (raw, raw, None)
     return (raw, None, raw)
@@ -284,7 +284,7 @@ def _jacobian_impl(
     translational: bool,
     rotational: bool,
 ) -> np.ndarray | tuple[np.ndarray, np.ndarray]:
-    """Compute Jacobian for a site or body COM: v = Jp @ qd, omega = Jr @ qd."""
+    """Compute Jacobian for a site or body COM: v = Jv @ qd, omega = Jw @ qd."""
     nv = model.nv
     jacp = np.zeros((3, nv)) if translational else None
     jacr = np.zeros((3, nv)) if rotational else None

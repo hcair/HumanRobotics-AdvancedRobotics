@@ -1,0 +1,4 @@
+<mujoco>
+    <option timestep="0.001"/>
+    <include file="panda_torque.xml"/>
+</mujoco>

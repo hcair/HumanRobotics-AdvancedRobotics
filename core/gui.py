@@ -336,6 +336,9 @@ class _EmbeddedPlot:
         for ax, sig in zip(self.axes, signals):
             ax.set_ylabel(sig.name)
             ax.grid(True)
+            if sig.reference is not None:
+                label = sig.reference_label or f"ref = {sig.reference}"
+                ax.axhline(y=sig.reference, color="gray", linestyle="--", label=label)
             self.lines.append([])
         self.axes[-1].set_xlabel("Time (s)")
 
@@ -355,7 +358,8 @@ class _EmbeddedPlot:
             y = np.asarray(buf)
             if not self.lines[i]:
                 for k in range(y.shape[1]):
-                    (line,) = ax.plot([], [], label=f"{sig.name}[{k}]")
+                    label = sig.name if y.shape[1] == 1 else f"{sig.name}[{k}]"
+                    (line,) = ax.plot([], [], label=label)
                     self.lines[i].append(line)
                 ax.legend(loc="upper left")
             for k, line in enumerate(self.lines[i]):
@@ -368,6 +372,9 @@ class _EmbeddedPlot:
             else:
                 ax.relim()
                 ax.autoscale_view(scaley=True)
+                if sig.reference is not None:
+                    ymin, ymax = ax.get_ylim()
+                    ax.set_ylim(min(ymin, sig.reference - 0.5), max(ymax, sig.reference + 0.5))
         try:
             self.canvas.draw_idle()
             self.canvas.flush_events()

@@ -16,6 +16,8 @@ class Signal:
         indices: Optional indices to slice the getter output (e.g. first 3 DOF).
         ylim_min: Optional fixed y-axis minimum for plotting.
         ylim_max: Optional fixed y-axis maximum for plotting.
+        reference: Optional horizontal reference line value for plotting (e.g. setpoint).
+        reference_label: Optional legend label for the reference line.
     """
 
     name: str
@@ -23,6 +25,8 @@ class Signal:
     indices: Iterable[int] | None = None
     ylim_min: float | None = None
     ylim_max: float | None = None
+    reference: float | None = None
+    reference_label: str | None = None
 
     def extract(self, data: object) -> np.ndarray:
         """Compute signal value from data via getter, optionally subselect indices.

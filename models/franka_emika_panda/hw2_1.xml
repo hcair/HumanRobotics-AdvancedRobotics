@@ -1,0 +1,24 @@
+<mujoco>
+    <option timestep="0.001"/>
+    <include file="panda_torque.xml"/>
+    <worldbody>
+        <!-- Obstacles (collision enabled) -->
+        <body name="plate" pos="0.5 -0.2 0.3">
+            <geom type="box" size="0.2 0.01 0.3" rgba="1 0 0 1"/>
+        </body>
+        <body name="plate2" pos="0.5 0.2 0.3">
+            <geom type="box" size="0.2 0.01 0.3" rgba="1 0 0 1"/>
+        </body>
+        
+        <!-- Goal points (visual only, no collision) -->
+        <body name="goal1" pos="0.5 -0.4 0.4">
+            <geom type="sphere" size="0.05" rgba="0 1 0 1" contype="0" conaffinity="0"/>
+        </body>
+        <body name="goal2" pos="0.5 0.0 0.4">
+            <geom type="sphere" size="0.05" rgba="0 1 0 1" contype="0" conaffinity="0"/>
+        </body>
+        <body name="goal3" pos="0.5 0.4 0.4">
+            <geom type="sphere" size="0.05" rgba="0 1 0 1" contype="0" conaffinity="0"/>
+        </body>
+    </worldbody>
+</mujoco>

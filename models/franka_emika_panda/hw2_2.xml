@@ -1,0 +1,21 @@
+<mujoco>
+  <option timestep="0.001"/>
+  <include file="panda_pencil_torque.xml"/>
+  <asset>
+    <mesh name="table_mesh" file="../table.obj" scale="0.01 0.013 0.005"/>
+  </asset>
+  <worldbody>
+      <body name="table_part1" pos="0.3 0.0 0.2">
+      <geom name="table_geom" type="mesh" mesh="table_mesh" rgba="0.25 0.25 0.3 1"
+            friction="0.1 0.003 0.0003" solref="0.12 1.0" solimp="0.3 0.5 0.05"/>
+    </body>
+    <body name="table_part2" pos="0.38 0.0 0.2">
+      <geom name="table_geom2" type="mesh" mesh="table_mesh" rgba="0.25 0.25 0.3 1"
+            friction="0.1 0.003 0.0003" solref="0.12 1.0" solimp="0.3 0.5 0.05"/>
+    </body>
+    <body name="table_part3" pos="0.5 0.0 0.2">
+      <geom name="table_geom3" type="mesh" mesh="table_mesh" rgba="0.25 0.25 0.3 1"
+            friction="0.1 0.003 0.0003" solref="0.12 1.0" solimp="0.3 0.5 0.05"/>
+    </body>
+  </worldbody>
+</mujoco>
