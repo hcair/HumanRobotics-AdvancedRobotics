@@ -112,7 +112,7 @@ class CAController:
             J_avoid = (n @ Jv).reshape(1, ARM_DOFS)
 
             # Approach speed = max(-dphi/dt, 0) — only damp when getting closer.
-            phi_dot = float(J_avoid @ dq)
+            phi_dot = float((J_avoid @ dq).item())
             approach_speed = max(-phi_dot, 0.0)
 
             # Scalar repulsive force along n, packed as a (1,) vector parallel to F_cmd in hw2-2.
