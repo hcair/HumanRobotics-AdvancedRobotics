@@ -1,0 +1,64 @@
+<mujoco model="project1">
+    <option timestep="0.001"/>
+    <include file="panda_torque.xml"/>
+
+    <default>
+        <default class="pickbox">
+            <geom friction="0.25 0.005 0.0001"/>
+        </default>
+        <default class="basket_wall">
+            <geom friction="0.4 0.005 0.0001" rgba="0.55 0.35 0.20 1"/>
+        </default>
+    </default>
+
+    <worldbody>
+        <geom name="ground" type="plane" pos="0 0 0" size="1 1 0.01"
+              rgba="0.45 0.45 0.50 1"/>
+
+        <geom name="belt" type="box" pos="0.5 0.0 0.20" size="0.10 0.30 0.005"
+              rgba="0.25 0.25 0.25 1"/>
+
+        <body name="basket" pos="0.0 0.45 0.05">
+            <geom class="basket_wall" type="box" size="0.18 0.18 0.005" pos="0 0 0"/>
+            <geom class="basket_wall" type="sphere" size="0.025" pos="0 0 0.030"/>
+            <geom class="basket_wall" type="box" size="0.005 0.18 0.12" pos="0.175 0 0.12"/>
+            <geom class="basket_wall" type="box" size="0.005 0.18 0.12" pos="-0.175 0 0.12"/>
+            <geom class="basket_wall" type="box" size="0.18 0.005 0.12" pos="0 0.175 0.12"/>
+            <geom class="basket_wall" type="box" size="0.18 0.005 0.12" pos="0 -0.175 0.12"/>
+        </body>
+
+        <body name="box1"  pos="0 0.0 -10"><freejoint name="box1_joint"/>
+            <geom class="pickbox" type="box" size="0.045 0.045 0.030" mass="0.33" rgba="0.85 0.30 0.30 1"/></body>
+        <body name="box2"  pos="0 0.1 -10"><freejoint name="box2_joint"/>
+            <geom class="pickbox" type="box" size="0.025 0.025 0.045" mass="0.08" rgba="0.85 0.55 0.20 1"/></body>
+        <body name="box3"  pos="0 0.2 -10"><freejoint name="box3_joint"/>
+            <geom class="pickbox" type="box" size="0.055 0.040 0.035" mass="0.46" rgba="0.85 0.80 0.20 1"/></body>
+        <body name="box4"  pos="0 0.3 -10"><freejoint name="box4_joint"/>
+            <geom class="pickbox" type="box" size="0.022 0.022 0.022" mass="0.04" rgba="0.50 0.80 0.30 1"/></body>
+        <body name="box5"  pos="0 0.4 -10"><freejoint name="box5_joint"/>
+            <geom class="pickbox" type="box" size="0.038 0.038 0.038" mass="0.29" rgba="0.30 0.75 0.55 1"/></body>
+        <body name="box6"  pos="0 0.5 -10"><freejoint name="box6_joint"/>
+            <geom class="pickbox" type="box" size="0.050 0.025 0.025" mass="0.17" rgba="0.25 0.65 0.85 1"/></body>
+        <body name="box7"  pos="0 0.6 -10"><freejoint name="box7_joint"/>
+            <geom class="pickbox" type="box" size="0.045 0.045 0.045" mass="0.50" rgba="0.35 0.40 0.85 1"/></body>
+        <body name="box8"  pos="0 0.7 -10"><freejoint name="box8_joint"/>
+            <geom class="pickbox" type="box" size="0.028 0.028 0.028" mass="0.10" rgba="0.55 0.35 0.85 1"/></body>
+        <body name="box9"  pos="0 0.8 -10"><freejoint name="box9_joint"/>
+            <geom class="pickbox" type="box" size="0.040 0.035 0.050" mass="0.42" rgba="0.80 0.35 0.75 1"/></body>
+        <body name="box10" pos="0 0.9 -10"><freejoint name="box10_joint"/>
+            <geom class="pickbox" type="box" size="0.035 0.060 0.030" mass="0.38" rgba="0.85 0.40 0.50 1"/></body>
+    </worldbody>
+
+    <equality>
+        <weld name="suction_box1"  body1="hand" body2="box1"  active="false" solref="0.05 1.5" solimp="0.9 0.95 0.001"/>
+        <weld name="suction_box2"  body1="hand" body2="box2"  active="false" solref="0.05 1.5" solimp="0.9 0.95 0.001"/>
+        <weld name="suction_box3"  body1="hand" body2="box3"  active="false" solref="0.05 1.5" solimp="0.9 0.95 0.001"/>
+        <weld name="suction_box4"  body1="hand" body2="box4"  active="false" solref="0.05 1.5" solimp="0.9 0.95 0.001"/>
+        <weld name="suction_box5"  body1="hand" body2="box5"  active="false" solref="0.05 1.5" solimp="0.9 0.95 0.001"/>
+        <weld name="suction_box6"  body1="hand" body2="box6"  active="false" solref="0.05 1.5" solimp="0.9 0.95 0.001"/>
+        <weld name="suction_box7"  body1="hand" body2="box7"  active="false" solref="0.05 1.5" solimp="0.9 0.95 0.001"/>
+        <weld name="suction_box8"  body1="hand" body2="box8"  active="false" solref="0.05 1.5" solimp="0.9 0.95 0.001"/>
+        <weld name="suction_box9"  body1="hand" body2="box9"  active="false" solref="0.05 1.5" solimp="0.9 0.95 0.001"/>
+        <weld name="suction_box10" body1="hand" body2="box10" active="false" solref="0.05 1.5" solimp="0.9 0.95 0.001"/>
+    </equality>
+</mujoco>

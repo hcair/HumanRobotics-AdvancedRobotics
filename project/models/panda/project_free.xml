@@ -1,0 +1,7 @@
+<mujoco model="project_free">
+    <option timestep="0.001"/>
+    <include file="panda_torque.xml"/>
+
+    <worldbody>
+    </worldbody>
+</mujoco>

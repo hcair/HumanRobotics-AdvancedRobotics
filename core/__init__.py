@@ -1,6 +1,7 @@
 """Core package for the human/advanced robotics course: MuJoCo simulation, trajectories, GUI, logging, and real-time utilities."""
 
 from . import math_utils, mujoco_robotics, viewer_utils
+from .data_logger import DataLogger
 from .gui import GUIParameter, UnifiedGUI
 from .keyboard_handler import KeyboardHandler
 from .mujoco_gui_helpers import make_qpos_parameter, make_qpos_parameter_from_model
@@ -12,6 +13,7 @@ from .trajectory import FifthOrderTrajectory, MultiSegmentTrajectory, Trajectory
 robotics = mujoco_robotics
 
 __all__ = [
+    "DataLogger",
     "FifthOrderTrajectory",
     "GUIParameter",
     "KeyboardHandler",

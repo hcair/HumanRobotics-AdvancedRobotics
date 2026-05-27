@@ -49,6 +49,25 @@ def rpy_to_rot(roll: float, pitch: float, yaw: float) -> np.ndarray:
     return rot_z(yaw) @ rot_y(pitch) @ rot_x(roll)
 
 
+def rot_to_rpy(R: np.ndarray) -> np.ndarray:
+    """Inverse of rpy_to_rot — extract (roll, pitch, yaw) from a rotation matrix.
+
+    Args:
+        R: (3, 3) rotation matrix following the convention R = Rz(yaw) @ Ry(pitch) @ Rx(roll).
+
+    Returns:
+        (3,) array [roll, pitch, yaw] in radians.
+    """
+    pitch = np.arcsin(-np.clip(R[2, 0], -1.0, 1.0))
+    if np.abs(np.cos(pitch)) > 1e-6:
+        roll = np.arctan2(R[2, 1], R[2, 2])
+        yaw = np.arctan2(R[1, 0], R[0, 0])
+    else:
+        roll = np.arctan2(-R[1, 2], R[1, 1])
+        yaw = 0.0
+    return np.array([roll, pitch, yaw])
+
+
 def rotation_matrix_to_axis_angle(R: np.ndarray) -> np.ndarray:
     """Compute axis-angle representation from a rotation matrix.
 
